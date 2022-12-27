@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Voting;
+use App\Models\{
+    Voting,
+    User
+};
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class VotingController extends Controller
 {
@@ -14,8 +18,44 @@ class VotingController extends Controller
      */
     public function index()
     {
-        $voting = Voting::all();
+        $voting = Voting::simplePaginate();
         return response()->json($voting, 200);
+    }
+
+    public function importJson()
+    {
+
+        $client = new \GuzzleHttp\Client();
+        $url = "https://vontingapi.onrender.com/voting";
+        $response = $client->request('GET', $url, [
+            'verify'  => false,
+        ]);
+
+        $responseBody = json_decode($response->getBody(), true);
+
+        foreach($responseBody as $res) {
+            if(is_null(Voting::whereQuote($res['quote'])->first())) {
+                Voting::create($res);
+                return true;
+            }
+        }
+    }
+
+    public function token(Request $request)
+    {
+        if(is_null(User::whereEmail('voting@email.com')->first())) {
+            $password = Hash::make('1@bamaq');
+            $user = User::create([
+                'name' => 'voting',
+                'email' => 'voting@email.com',
+                'password' => $password,
+            ]);
+            $token = $user->createToken('api');
+            return ['token' => $token->plainTextToken];
+        }
+        else {
+            return true;
+        }
     }
 
     /**
@@ -26,41 +66,24 @@ class VotingController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->validated());
-        return Voting::create($request->all());
+        $request->validate([
+            'client' => 'required',
+            'quote' => 'required',
+            'group' => 'required',
+            'vote' => 'required',
+        ]);
+        if(is_null(Voting::whereQuote($request->quote)->first())) {
+            Voting::create($request->all());
+            return response()->json([
+                'message' => 'Obrigado pela sua participação!',
+                'status' => 201
+            ], 201);
+        } else {
+            return response()->json([
+                'message' => 'Seu voto ja foi computado.',
+                'status'  => 200
+            ], 200);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Voting  $voting
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Voting $voting)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Voting  $voting
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Voting $voting)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Voting  $voting
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Voting $voting)
-    {
-        //
-    }
 }

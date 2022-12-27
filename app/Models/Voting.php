@@ -9,7 +9,7 @@ class Voting extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name',
+        'client',
         'group',
         'quote',
         'vote',
