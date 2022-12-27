@@ -18,7 +18,7 @@ class VotingController extends Controller
      */
     public function index()
     {
-        $voting = Voting::simplePaginate();
+        $voting = Voting::all();
         return response()->json($voting, 200);
     }
 
