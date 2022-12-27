@@ -36,9 +36,9 @@ class VotingController extends Controller
         foreach($responseBody as $res) {
             if(is_null(Voting::whereQuote($res['quote'])->first())) {
                 Voting::create($res);
-                return true;
             }
         }
+        return true;
     }
 
     public function token(Request $request)
